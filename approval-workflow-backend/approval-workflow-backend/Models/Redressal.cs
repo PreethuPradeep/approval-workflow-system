@@ -1,7 +1,7 @@
 ﻿using approval_workflow_backend.Models;
 using System.ComponentModel.DataAnnotations;
 
-namespace ApprovalWorkflow.Domain.Models
+namespace approval_workflow_backend.Models
 {
     public class Redressal
     {
@@ -15,6 +15,6 @@ namespace ApprovalWorkflow.Domain.Models
         [Required]
         public DateTime CreatedAt { get; set; }
         public DateTime? ClosedAt { get; set; }
-
+        public RedressalContent Content { get; set; }
     }
 }
