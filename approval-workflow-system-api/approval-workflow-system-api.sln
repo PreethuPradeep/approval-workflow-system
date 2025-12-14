@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36623.8 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "approval-workflow-system-api", "approval-workflow-system-api\approval-workflow-system-api.csproj", "{68E92BD3-AC92-415A-9F0E-3BFFA990122A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{68E92BD3-AC92-415A-9F0E-3BFFA990122A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68E92BD3-AC92-415A-9F0E-3BFFA990122A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68E92BD3-AC92-415A-9F0E-3BFFA990122A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68E92BD3-AC92-415A-9F0E-3BFFA990122A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {16556D61-4F73-4888-AE37-82B379C27C7A}
+	EndGlobalSection
+EndGlobal
