@@ -1,5 +1,5 @@
 ﻿
-using ApprovalWorkflow.Domain.Models;
+
 using System.ComponentModel.DataAnnotations;
 
 namespace approval_workflow_backend.Models
