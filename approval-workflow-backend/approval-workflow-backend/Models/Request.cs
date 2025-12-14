@@ -1,4 +1,4 @@
-﻿using approval_workflow_backend.Models;
+﻿
 using System.ComponentModel.DataAnnotations;
 
 namespace approval_workflow_backend.Models
@@ -32,7 +32,9 @@ namespace approval_workflow_backend.Models
         public DateTime? ClosedAt { get; set; }
 
         // Navigation
+        public RequestContent Content { get; set; }
         public ICollection<Redressal> Redressals { get; set; }
         public ICollection<RequestAudit> Audits { get; set; }
+        public ICollection<RequestAssignment> Assignments { get; set; }
     }
 }
