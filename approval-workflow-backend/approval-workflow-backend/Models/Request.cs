@@ -1,7 +1,7 @@
 ﻿using approval_workflow_backend.Models;
 using System.ComponentModel.DataAnnotations;
 
-namespace ApprovalWorkflow.Domain.Models
+namespace approval_workflow_backend.Models
 {
     public class Request
     {
