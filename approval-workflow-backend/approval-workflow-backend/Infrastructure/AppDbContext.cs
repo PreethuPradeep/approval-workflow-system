@@ -51,17 +51,32 @@ namespace approval_workflow_backend.Infrastructure
             modelBuilder.Entity<Redressal>()
                 .HasIndex(r => new { r.RequestId, r.RedressalCount, r.IsActive })
                 .IsUnique();
-            //Redressal to RedressalContent (one-to-one)
-            modelBuilder.Entity<Redressal>()
-                .HasOne(r => r.Content)
-                .WithOne(c => c.Redressal)
-                .HasForeignKey<RedressalContent>(c => c.RedressalId);
             modelBuilder.Entity<Request>()
                 .HasQueryFilter(r => r.IsActive);
             modelBuilder.Entity<Request>()
                 .Property(r => r.CurrentState)
                 .HasConversion<int>();
-
+            //child should survive if parent is soft deleted
+            modelBuilder.Entity<RequestAudit>()
+                .HasOne(a => a.Request)
+                .WithMany(r => r.Audits)
+                .HasForeignKey(a => a.RequestId)
+                .IsRequired(false);
+            modelBuilder.Entity<RequestAssignment>()
+                .HasOne(ass => ass.Request)
+                .WithMany(r => r.Assignments)
+                .HasForeignKey(ass => ass.RequestId)
+                .IsRequired(false);
+            modelBuilder.Entity<Redressal>()
+                .HasOne(rd => rd.Request)
+                .WithMany(r => r.Redressals)
+                .HasForeignKey(rd => rd.RequestId)
+                .IsRequired(false);
+            modelBuilder.Entity<RequestContent>()
+                .HasOne(rc => rc.Request)
+                .WithOne(r => r.Content)
+                .HasForeignKey<RequestContent>(rc => rc.RequestId)
+                .IsRequired(false);
         }
     }
 }
