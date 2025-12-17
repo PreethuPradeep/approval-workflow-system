@@ -8,7 +8,7 @@
         UnderAuditorReview = 4,//auditor opened the request
         PendingAdmin =5,//request escalated to admin
         Approved = 6,
-        Rejexted = 7,
+        Rejected = 7,
         Closed = 8//request lifecycle is over
     }
 }
