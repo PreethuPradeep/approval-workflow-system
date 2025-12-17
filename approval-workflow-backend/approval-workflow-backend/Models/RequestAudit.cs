@@ -10,7 +10,7 @@ namespace approval_workflow_backend.Models
         public int Id { get; set; }
         [Required]
         public int RequestId { get; set; }
-        public Request MyProperty { get; set; }
+        public Request Request { get; set; }
         
         public int? RedressalId { get; set; }
         public Redressal Redressal { get; set; }

@@ -13,7 +13,7 @@ namespace approval_workflow_backend.Models
         [MaxLength(255)]
         public string Email { get; set; }
         [Required]
-        public string PsswordHash { get; set; }
+        public string PasswordHash { get; set; }
 
         public bool Active { get; set; } = true;
         public ICollection<UserRole> UserRoles { get; set; }

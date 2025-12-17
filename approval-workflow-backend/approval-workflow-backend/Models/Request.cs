@@ -22,6 +22,8 @@ namespace approval_workflow_backend.Models
         public int RedressalCount { get; set; } = 0;
 
         // Soft delete / visibility control
+        //When false, the request is considered archived (soft-deleted) and is
+        /// excluded by global query filters. Historical child records may still exist.
         public bool IsActive { get; set; } = true;
 
         // Timestamps for lifecycle insight
