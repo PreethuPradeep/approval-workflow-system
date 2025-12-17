@@ -68,6 +68,32 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
+        public void MarkUnderReview(int requestId, int auditorId)
+        {
+            var request = _context.Requests.First(r => r.Id == requestId);
+            if (!RequestStateGuard.CanTransition(
+                request.CurrentState,
+                RequestState.UnderAuditorReview))
+                throw new InvalidOperationException("Invalid State Transfer");
+            var assignment = _context.RequestAssignments
+                .FirstOrDefault(a => a.RequestId == requestId &&
+                a.AuditorId == auditorId && a.IsActive);
 
+            if (assignment == null)
+                throw new InvalidOperationException("No active assignments");
+
+            var fromState = request.CurrentState;
+            request.CurrentState = RequestState.UnderAuditorReview;
+            _context.RequestAudits.Add(new RequestAudit
+            {
+                RequestId = requestId,
+                ActorId = auditorId,
+                FromState = fromState,
+                ToState = RequestState.UnderAuditorReview,
+                Action = RequestAction.Opened,
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+        }
     }
 }
