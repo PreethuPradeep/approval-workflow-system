@@ -1,4 +1,6 @@
 
+using approval_workflow_backend.Services;
+
 namespace approval_workflow_backend
 {
     public class Program
@@ -8,6 +10,7 @@ namespace approval_workflow_backend
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddScoped<RequestService>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
