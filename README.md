@@ -3,6 +3,7 @@
 A backend-focused approval workflow system built using **ASP.NET Core** and **Entity Framework Core**, designed to model real-world approval processes with strong emphasis on **correctness, auditability, and controlled state transitions**.
 
 This project prioritizes backend integrity and workflow safety over UI complexity.
+> 🚧 Backend-first build. Frontend and deployment will be added after core workflow stabilization.
 
 ---
 
