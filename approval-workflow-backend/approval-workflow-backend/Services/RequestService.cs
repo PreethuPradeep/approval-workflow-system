@@ -1,6 +1,7 @@
 ﻿using approval_workflow_backend.Guards;
 using approval_workflow_backend.Infrastructure;
 using approval_workflow_backend.Models;
+using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace approval_workflow_backend.Services
@@ -13,19 +14,22 @@ namespace approval_workflow_backend.Services
             _context = context;
         }
         public void SubmitRequest(int requestId, int actorId)
-        {
+        {//find the request of id given from requests
             var request = _context.Requests
                 .IgnoreQueryFilters()
                 .FirstOrDefault(r => r.Id == requestId);
+            //if there is no such request or if its inactive, request not found
             if (request == null || !request.IsActive)
                 throw new InvalidOperationException("Request Not Found");
+            //if the current satate of the request cannot transition to Submitted, invalid state
             if (!RequestStateGuard.CanTransition(request.CurrentState, Models.RequestState.Submitted))
                 throw new InvalidOperationException("Invalid state transition");
-
+            //if fromState is the current state of request and toState is what it will be after trnsition
             var fromState = request.CurrentState;
+            //change the current state to submitted and record the time.
             request.CurrentState = Models.RequestState.Submitted;
             request.SubmittedAt = DateTime.UtcNow;
-
+            //update the request history in requestaudits
             _context.RequestAudits.Add(new Models.RequestAudit
             {
                 RequestId = request.Id,
@@ -38,13 +42,16 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         public void AssignRequest(int requestId, int AuditorId, int actorId)
-        {
+        {//once request is submitted the request need to be assigned to an auditor and state must be transitioned.
             var request = _context.Requests.FirstOrDefault(r => r.Id == requestId);
+            //check if the currentstate can transition to assignedToAuditor
             if (!RequestStateGuard.CanTransition(
                 request.CurrentState, RequestState.AssignedToAuditor))
                 throw new InvalidOperationException("Invalid state transition");
+            //check if the request has an assignement
             var activeAssignment = _context.RequestAssignments
                 .FirstOrDefault(a => a.RequestId == requestId && a.IsActive);
+            //if not assign one
             if (activeAssignment != null)
                 activeAssignment.IsActive = false;
             _context.RequestAssignments.Add(new RequestAssignment
@@ -54,9 +61,10 @@ namespace approval_workflow_backend.Services
                 AssignedAt = DateTime.UtcNow,
                 IsActive = true
             });
+            //change the state
             var fromState = request.CurrentState;
             request.CurrentState = RequestState.AssignedToAuditor;
-
+            //Record in audit
             _context.RequestAudits.Add(new RequestAudit
             {
                 RequestId = requestId,
@@ -69,21 +77,24 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         public void MarkUnderReview(int requestId, int auditorId)
-        {
+        {//once the request is opened by auditor its marked under auditor review
             var request = _context.Requests.First(r => r.Id == requestId);
+            //check if its state can change from current to under auditor review
             if (!RequestStateGuard.CanTransition(
                 request.CurrentState,
                 RequestState.UnderAuditorReview))
                 throw new InvalidOperationException("Invalid State Transfer");
+            //get the assignment with the requestid, auditor id and is active.
             var assignment = _context.RequestAssignments
                 .FirstOrDefault(a => a.RequestId == requestId &&
                 a.AuditorId == auditorId && a.IsActive);
-
+            //if null no such assignment
             if (assignment == null)
                 throw new InvalidOperationException("No active assignments");
-
+            //record the current state and change it to UnderAuditorView
             var fromState = request.CurrentState;
             request.CurrentState = RequestState.UnderAuditorReview;
+            //record it in audits
             _context.RequestAudits.Add(new RequestAudit
             {
                 RequestId = requestId,
