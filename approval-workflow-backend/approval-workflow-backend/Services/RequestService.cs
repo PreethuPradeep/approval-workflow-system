@@ -1,7 +1,6 @@
 ﻿using approval_workflow_backend.Guards;
 using approval_workflow_backend.Infrastructure;
 using approval_workflow_backend.Models;
-using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace approval_workflow_backend.Services
@@ -43,7 +42,7 @@ namespace approval_workflow_backend.Services
         }
         public void AssignRequest(int requestId, int AuditorId, int actorId)
         {//once request is submitted the request need to be assigned to an auditor and state must be transitioned.
-            var request = _context.Requests.FirstOrDefault(r => r.Id == requestId);
+            var request = _context.Requests.First(r => r.Id == requestId);
             //check if the currentstate can transition to assignedToAuditor
             if (!RequestStateGuard.CanTransition(
                 request.CurrentState, RequestState.AssignedToAuditor))
@@ -106,5 +105,90 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
+        //request is approved
+        public void ApproveRequest(int requestId, int auditorId)
+        {
+            //get the request
+            var request = _context.Requests.First(r => r.Id == requestId);
+            //if the state cant change into approved, throwerror
+            if (!RequestStateGuard.CanTransition(request.CurrentState, RequestState.Approved))
+                throw new InvalidOperationException("Invalid State transition");
+            //get assignment
+            var assignment = _context.RequestAssignments.FirstOrDefault(r => r.RequestId == requestId && r.AuditorId == auditorId && r.IsActive == true);
+            //if assignment null, then exception
+            if (assignment == null)
+                throw new InvalidOperationException("No active assignment for this request");
+            //record state
+            var fromState = request.CurrentState;
+            //Change state
+            request.CurrentState = RequestState.Approved;
+            //close assignment
+            assignment.IsActive = false;
+            //record it under audit
+            _context.RequestAudits.Add(new RequestAudit
+            {
+                RequestId = requestId,
+                ActorId = auditorId,
+                FromState = fromState,
+                ToState = RequestState.Approved,
+                Action = RequestAction.Approved,
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+        }
+        //request is rejected
+        public void RejectRequest(int requestId, int auditorId)
+        {
+            var request = _context.Requests.First(r => r.Id == requestId);
+            if (!RequestStateGuard.CanTransition(request.CurrentState, RequestState.Rejected))
+                throw new InvalidOperationException("Invalid State transition");
+            var assignment = _context.RequestAssignments.FirstOrDefault(r => r.RequestId == requestId && r.AuditorId == auditorId && r.IsActive == true);
+            if (assignment == null)
+                throw new InvalidOperationException("No active assignment for the request");
+            var fromState = request.CurrentState;
+            request.CurrentState = RequestState.Rejected;
+            assignment.IsActive = false;
+            _context.RequestAudits.Add(new RequestAudit
+            {
+                RequestId = requestId,
+                ActorId = auditorId,
+                FromState = fromState,
+                ToState = RequestState.Rejected,
+                Action = RequestAction.Rejected,
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+        }
+        //escalated to admin
+        public void EscalateToAdmin(int requestId,int auditorId, string reason)
+        {
+            var request = _context.Requests.First(r => r.Id == requestId);
+            if (!RequestStateGuard.CanTransition(
+            request.CurrentState,
+            RequestState.PendingAdmin))
+                throw new InvalidOperationException("Invalid state transition");
+
+            var assignment = _context.RequestAssignments.FirstOrDefault(r => r.RequestId == requestId && r.AuditorId == auditorId && r.IsActive);
+            if (assignment == null) throw new InvalidOperationException("No active assignment for this request");
+            var fromState = request.CurrentState;
+            request.CurrentState = RequestState.PendingAdmin;
+            assignment.IsActive = false;
+            _context.RequestAudits.Add(new RequestAudit
+            {
+                RequestId = requestId,
+                ActorId = auditorId,
+                FromState = fromState,
+                ToState = RequestState.PendingAdmin,
+                Action = RequestAction.Escalated,
+                Reason = reason,
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+            
+            
+        }
+        //close request
+        //Deactivete request
+        //redressalls
     }
 }
