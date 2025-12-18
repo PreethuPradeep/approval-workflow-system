@@ -144,4 +144,3 @@ Backend-focused .NET Developer
 
 - GitHub: https://github.com/PreethuPradeep
 - LinkedIn: https://linkedin.com/in/preethu-pradeep-0443a836a
-
