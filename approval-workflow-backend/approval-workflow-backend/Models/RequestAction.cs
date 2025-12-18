@@ -10,6 +10,7 @@
         Approved = 6,// Approved by auditor/admin
         Rejected = 7,// Rejected by auditor/admin
         Closed = 8,// Closed after approval/rejection
-        Deactivated = 9// Soft-deleted / archived
+        Deactivated = 9,// Soft-deleted / archived
+        RedressalClosed = 10//to close a reddressal
     }
 }
