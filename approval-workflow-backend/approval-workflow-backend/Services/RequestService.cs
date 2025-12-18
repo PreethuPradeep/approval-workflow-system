@@ -40,7 +40,7 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
-        public void AssignRequest(int requestId, int AuditorId, int actorId)
+        public void AssignRequest(int requestId, int auditorId, int actorId)
         {//once request is submitted the request need to be assigned to an auditor and state must be transitioned.
             var request = _context.Requests.First(r => r.Id == requestId);
             //check if the currentstate can transition to assignedToAuditor
@@ -56,7 +56,7 @@ namespace approval_workflow_backend.Services
             _context.RequestAssignments.Add(new RequestAssignment
             {
                 RequestId = requestId,
-                AuditorId = AuditorId,
+                AuditorId = auditorId,
                 AssignedAt = DateTime.UtcNow,
                 IsActive = true
             });
@@ -188,7 +188,97 @@ namespace approval_workflow_backend.Services
             
         }
         //close request
+        public void CloseRequest(int requestId,int actorId)
+        {
+            var request = _context.Requests.First(r => r.Id == requestId);
+            if (!RequestStateGuard.CanTransition(request.CurrentState, RequestState.Closed))
+                throw new InvalidOperationException("Invalid state transition");
+            var fromState = request.CurrentState;
+            request.CurrentState = RequestState.Closed;
+            request.ClosedAt = DateTime.UtcNow;
+            _context.RequestAudits.Add(new RequestAudit
+            {
+                RequestId = requestId,
+                ActorId = actorId,
+                FromState = fromState,
+                ToState = RequestState.Closed,
+                Action = RequestAction.Closed,
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+        }
         //Deactivete request
+        public void DeactivateRequest(int requestId, int actorId,string reason)
+        {
+            var request = _context.Requests.IgnoreQueryFilters().First(r => r.Id == requestId);
+            if (request.CurrentState != RequestState.Closed) throw new InvalidOperationException("Only closed requests can be deactivated");
+            if (!request.IsActive) return;
+            request.IsActive = false;
+            _context.RequestAudits.Add(new RequestAudit
+            {
+                RequestId = requestId,
+                ActorId = actorId,
+                FromState = request.CurrentState,
+                ToState = request.CurrentState,
+                Action = RequestAction.Deactivated,
+                Reason = reason,
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+        }
         //redressalls
+        public void CreateRedressal(int requestId, int actorId, string payload)
+        {
+            var request = _context.Requests.IgnoreQueryFilters().First(r=> r.Id == requestId);
+            if (request.CurrentState != RequestState.Closed) throw new InvalidOperationException("Only closed requests can have redressals");
+            request.RedressalCount++;
+            var redressal = new Redressal
+            {
+                RequestId = requestId,
+                RedressalCount = request.RedressalCount,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Redressals.Add(redressal);
+            _context.RedressalContents.Add(new RedressalContent
+            {
+                Redressal = redressal,
+                PayLoad = payload,
+                CreatedAt = DateTime.UtcNow
+            });
+            var fromState = request.CurrentState;
+            request.CurrentState = RequestState.Submitted;
+            _context.RequestAudits.Add(new RequestAudit
+            {
+                RequestId = requestId,
+                ActorId = actorId,
+                FromState = fromState,
+                ToState = RequestState.Submitted,
+                Action = RequestAction.Created,
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+        }
+        public void CloseRedressal(int requestId,int actorId,string reason)
+        {
+            var request = _context.Requests.First(r => r.Id == requestId);
+            if (request.CurrentState!=RequestState.Closed)
+                throw new InvalidOperationException("Redressal can only be closed after the request is closed");
+            var redressal = _context.Redressals.FirstOrDefault(r => r.RequestId == requestId && r.IsActive);
+            if (redressal == null) throw new InvalidOperationException("No active reddressal exists for this request");
+            redressal.IsActive = false;
+            redressal.ClosedAt = DateTime.UtcNow;
+            _context.RequestAudits.Add(new RequestAudit
+            {
+                RequestId = requestId,
+                ActorId = actorId,
+                FromState = RequestState.Closed,
+                ToState = RequestState.Closed,
+                Reason = reason,
+                Action = RequestAction.RedressalClosed,
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+        }
     }
 }
