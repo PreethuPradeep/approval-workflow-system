@@ -77,6 +77,10 @@ namespace approval_workflow_backend.Infrastructure
                 .WithOne(r => r.Content)
                 .HasForeignKey<RequestContent>(rc => rc.RequestId)
                 .IsRequired(false);
+            modelBuilder.Entity<RequestAudit>()
+                .Property(a => a.Reason)
+                .IsRequired(false);
+
         }
     }
 }

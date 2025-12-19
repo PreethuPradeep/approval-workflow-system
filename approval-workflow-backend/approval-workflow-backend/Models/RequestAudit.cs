@@ -18,14 +18,14 @@ namespace approval_workflow_backend.Models
         public int ActorId { get; set; }
         public User Actor { get; set; }
         [Required]
-        public string ActorRole { get; set; }
+        public string ActorRole { get; set; } = null!;
         [Required]
         public RequestState FromState { get; set; }
         [Required]
         public RequestState ToState { get; set; }
         [Required]
         public RequestAction Action { get; set; }
-        public string Reason { get; set; }
+        public string? Reason { get; set; }
         [Required]
         public DateTime CreatedAt { get; set; }
 

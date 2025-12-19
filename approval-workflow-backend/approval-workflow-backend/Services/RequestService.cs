@@ -8,11 +8,13 @@ namespace approval_workflow_backend.Services
     public class RequestService
     {
         private readonly AppDbContext _context;
+        private string actorRole;
+
         public RequestService(AppDbContext context)
         {
             _context = context;
         }
-        public void SubmitRequest(int requestId, int actorId)
+        public void SubmitRequest(int requestId, int actorId, string actorRole)
         {//find the request of id given from requests
             var request = _context.Requests
                 .IgnoreQueryFilters()
@@ -33,6 +35,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = request.Id,
                 ActorId = actorId,
+                ActorRole = actorRole,
                 FromState = fromState,
                 ToState = RequestState.Submitted,
                 Action = RequestAction.Submitted,
@@ -40,7 +43,7 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
-        public void AssignRequest(int requestId, int auditorId, int actorId)
+        public void AssignRequest(int requestId, int auditorId, int actorId, string actorRole)
         {//once request is submitted the request need to be assigned to an auditor and state must be transitioned.
             var request = _context.Requests.First(r => r.Id == requestId);
             //check if the currentstate can transition to assignedToAuditor
@@ -68,6 +71,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = requestId,
                 ActorId = actorId,
+                ActorRole = actorRole,
                 FromState = fromState,
                 ToState = RequestState.AssignedToAuditor,
                 Action = RequestAction.Assigned,
@@ -75,7 +79,7 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
-        public void MarkUnderReview(int requestId, int auditorId)
+        public void MarkUnderReview(int requestId, int auditorId, string actorRole)
         {//once the request is opened by auditor its marked under auditor review
             var request = _context.Requests.First(r => r.Id == requestId);
             //check if its state can change from current to under auditor review
@@ -98,6 +102,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = requestId,
                 ActorId = auditorId,
+                ActorRole = actorRole,
                 FromState = fromState,
                 ToState = RequestState.UnderAuditorReview,
                 Action = RequestAction.Opened,
@@ -106,7 +111,7 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //request is approved
-        public void ApproveRequest(int requestId, int auditorId)
+        public void ApproveRequest(int requestId, int auditorId, string actorRole)
         {
             //get the request
             var request = _context.Requests.First(r => r.Id == requestId);
@@ -129,6 +134,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = requestId,
                 ActorId = auditorId,
+                ActorRole = actorRole,
                 FromState = fromState,
                 ToState = RequestState.Approved,
                 Action = RequestAction.Approved,
@@ -137,7 +143,7 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //request is rejected
-        public void RejectRequest(int requestId, int auditorId)
+        public void RejectRequest(int requestId, int auditorId, string actorRole)
         {
             var request = _context.Requests.First(r => r.Id == requestId);
             if (!RequestStateGuard.CanTransition(request.CurrentState, RequestState.Rejected))
@@ -152,6 +158,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = requestId,
                 ActorId = auditorId,
+                ActorRole = actorRole,
                 FromState = fromState,
                 ToState = RequestState.Rejected,
                 Action = RequestAction.Rejected,
@@ -160,7 +167,7 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //escalated to admin
-        public void EscalateToAdmin(int requestId,int auditorId, string reason)
+        public void EscalateToAdmin(int requestId,int auditorId, string reason, string actorRole)
         {
             var request = _context.Requests.First(r => r.Id == requestId);
             if (!RequestStateGuard.CanTransition(
@@ -177,6 +184,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = requestId,
                 ActorId = auditorId,
+                ActorRole = actorRole,
                 FromState = fromState,
                 ToState = RequestState.PendingAdmin,
                 Action = RequestAction.Escalated,
@@ -188,7 +196,7 @@ namespace approval_workflow_backend.Services
             
         }
         //close request
-        public void CloseRequest(int requestId,int actorId)
+        public void CloseRequest(int requestId,int actorId, string actorRole)
         {
             var request = _context.Requests.First(r => r.Id == requestId);
             if (!RequestStateGuard.CanTransition(request.CurrentState, RequestState.Closed))
@@ -200,6 +208,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = requestId,
                 ActorId = actorId,
+                ActorRole = actorRole,
                 FromState = fromState,
                 ToState = RequestState.Closed,
                 Action = RequestAction.Closed,
@@ -208,7 +217,7 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //Deactivete request
-        public void DeactivateRequest(int requestId, int actorId,string reason)
+        public void DeactivateRequest(int requestId, int actorId,string reason, string role)
         {
             var request = _context.Requests.IgnoreQueryFilters().First(r => r.Id == requestId);
             if (request.CurrentState != RequestState.Closed) throw new InvalidOperationException("Only closed requests can be deactivated");
@@ -218,6 +227,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = requestId,
                 ActorId = actorId,
+                ActorRole = actorRole,
                 FromState = request.CurrentState,
                 ToState = request.CurrentState,
                 Action = RequestAction.Deactivated,
@@ -227,7 +237,7 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //redressalls
-        public void CreateRedressal(int requestId, int actorId, string payload)
+        public void CreateRedressal(int requestId, int actorId, string payload, string actorRole)
         {
             var request = _context.Requests.IgnoreQueryFilters().First(r=> r.Id == requestId);
             if (request.CurrentState != RequestState.Closed) throw new InvalidOperationException("Only closed requests can have redressals");
@@ -252,6 +262,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = requestId,
                 ActorId = actorId,
+                ActorRole = actorRole,
                 FromState = fromState,
                 ToState = RequestState.Submitted,
                 Action = RequestAction.Created,
@@ -259,7 +270,7 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
-        public void CloseRedressal(int requestId,int actorId,string reason)
+        public void CloseRedressal(int requestId,int actorId,string reason, string actorRole)
         {
             var request = _context.Requests.First(r => r.Id == requestId);
             if (request.CurrentState!=RequestState.Closed)
@@ -272,6 +283,7 @@ namespace approval_workflow_backend.Services
             {
                 RequestId = requestId,
                 ActorId = actorId,
+                ActorRole = actorRole,
                 FromState = RequestState.Closed,
                 ToState = RequestState.Closed,
                 Reason = reason,
