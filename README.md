@@ -3,11 +3,11 @@
 A backend-focused approval workflow system built using **ASP.NET Core** and **Entity Framework Core**, designed to model real-world approval processes with strong emphasis on **correctness, auditability, and controlled state transitions**.
 
 This project prioritizes backend integrity and workflow safety over UI complexity.
-> 🚧 Backend-first build. Frontend and deployment will be added after core workflow stabilization.
+>  Backend-first build. Frontend and deployment will be added after core workflow stabilization.
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
 - **Explicit Request State Machine**
   - Guarded state transitions prevent invalid workflow jumps
@@ -37,7 +37,7 @@ This project prioritizes backend integrity and workflow safety over UI complexit
 
 ---
 
-## 🧠 Design Principles
+##  Design Principles
 
 - **State machines over boolean flags**  
   Prevents invalid combinations and implicit transitions
@@ -56,7 +56,7 @@ This project prioritizes backend integrity and workflow safety over UI complexit
 
 ---
 
-## 🏗️ Architecture Overview
+##  Architecture Overview
 
 Controllers (planned)
 ↓
@@ -73,7 +73,7 @@ SQL Server
 
 ---
 
-## 🧩 Core Domain Concepts
+##  Core Domain Concepts
 
 ### Request
 Represents the primary approval entity.  
@@ -92,7 +92,7 @@ Redressals are versioned and tracked independently of the main request lifecycle
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 - **Backend:** ASP.NET Core Web API
 - **ORM:** Entity Framework Core
@@ -102,7 +102,7 @@ Redressals are versioned and tracked independently of the main request lifecycle
 
 ---
 
-## 🚧 Current Status
+##  Current Status
 
 - Core backend workflow implemented
 - Redressal creation and closure supported
@@ -133,7 +133,7 @@ The focus is on business-critical rules rather than exhaustive CRUD coverage.
 
 ---
 
-## 📝 Why This Project Exists
+##  Why This Project Exists
 
 This project was built to explore **realistic backend workflow design**, focusing on:
 - correctness under complex state transitions
