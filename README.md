@@ -108,6 +108,21 @@ Redressals are versioned and tracked independently of the main request lifecycle
 - Redressal creation and closure supported
 - Full audit logging in place
 
+---
+
+## Testing Strategy
+
+This project uses targeted unit tests to enforce critical workflow invariants:
+
+- Invalid state transitions are rejected
+- Only assigned auditors can act on requests
+- Assignments are closed on terminal actions
+- Audit entries are created for every state change
+
+The focus is on business-critical rules rather than exhaustive CRUD coverage.
+
+---
+
 ### In Progress / Planned
 - Role-based authorization (Admin / Auditor / Requestor)
 - REST API controllers
