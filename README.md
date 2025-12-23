@@ -14,21 +14,29 @@ This project prioritizes backend integrity and workflow safety over UI complexit
   - States modeled explicitly instead of flag-based status handling
 
 - **Approval Lifecycle**
-  - Draft → Submitted → Assigned → Under Review  
-  - Approved / Rejected / Escalated → Closed → Deactivated
+  
+      Draft → Submitted → Assigned → Under Review
+                               ↓
+                           Approved → Closed
+                               ↓
+                           Rejected → Closed
+                               ↓
+                           Escalated → PendingAdmin
 
 - **Auditor Assignment Management**
   - Single active assignment enforced per request
-  - Assignment lifecycle tracked explicitly
+  - Assignment lifecycle explicitly tracked
+  - Assignments automatically closed on terminal actions
 
 - **Redressal (Appeal) Handling**
-  - Create redressals for closed requests
-  - Re-enter workflow safely
-  - Close redressals without losing historical context
+  - Redressals can be created only for closed requests
+  - Redressals can re-enter the workflow safely
+  - Multiple redressals supported without losing historical context
 
 - **Audit Logging**
   - Every state-changing action is recorded
   - Captures actor, action, previous state, next state, timestamp, and reason where applicable
+  - Audit records are immutable
 
 - **Soft Delete Strategy**
   - Requests are deactivated, not deleted
@@ -52,7 +60,7 @@ This project prioritizes backend integrity and workflow safety over UI complexit
   No silent state changes
 
 - **Clarity over abstraction**  
-  EF Core used directly without generic repositories (for now)
+  EF Core used directly without generic repositories
 
 ---
 
@@ -77,14 +85,14 @@ SQL Server
 
 ### Request
 Represents the primary approval entity.  
-Holds current state, timestamps, and redressal count.
+Stores current state, timestamps, redressal count, and activity flag
 
 ### RequestAssignment
 Tracks which auditor is currently responsible for a request.  
 Only one active assignment allowed at a time.
 
 ### RequestAudit
-Immutable log of all state-changing actions.
+Immutable log of every workflow action.
 
 ### Redressal
 Represents an appeal cycle for a closed request.  
@@ -100,7 +108,7 @@ Redressals are versioned and tracked independently of the main request lifecycle
 - **Language:** C#
 - **Version Control:** Git, GitHub
 - **Authentication**: Cookie-based with claims
-- **Authorization**: Role-based via ASP.NET Core policies
+- **Authorization**: Role-based via ASP.NET Core role claims
 
 ---
 
@@ -109,6 +117,7 @@ Redressals are versioned and tracked independently of the main request lifecycle
 - Core backend workflow implemented
 - Redressal creation and closure supported
 - Full audit logging in place
+- Controllers wired to service-layer rules
 
 ---
 
@@ -193,11 +202,13 @@ Precondition: Redressal created, Request closed
 
 ## State machine visualization
 
-Draft → Submitted → Assigned → UnderReview → Approved → Closed (Admin)
-                       ↓
-                   Rejected → Closed (Admin)
-                       ↓
-                   Redressal → Submitted
+Detailed diagrams are maintained separately using Mermaid:
+
+State machine: docs/state-machine.md
+
+ER diagram: docs/er-diagram.md
+
+These documents reflect the current implementation and are kept in sync with the codebase.
 
 ---
 
