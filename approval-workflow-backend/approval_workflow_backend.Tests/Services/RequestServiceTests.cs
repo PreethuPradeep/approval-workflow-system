@@ -89,8 +89,6 @@ public class RequestServiceTests
         SeedUserWithRole(context, userId: 99, roleName: Roles.Admin);
         SeedUserWithRole(context, userId: 2, roleName: Roles.Auditor);
 
-
-
         var request = new Request
         {
             RequesterId = 1,
@@ -109,6 +107,33 @@ public class RequestServiceTests
 
         Assert.True(assignment.IsActive);
         Assert.Equal(2, assignment.AuditorId);
+    }
+    [Fact]
+    public void ApproveRequest_By_NonAssigned_Auditor_Throws()
+    {
+        using var context = CreateContext();
+        SeedUserWithRole(context, userId: 1, roleName: "Auditor");
+        SeedUserWithRole(context, userId: 2, roleName: "Auditor");
+            var request = new Request
+            {
+                RequesterId = 5,
+                CurrentState = RequestState.UnderAuditorReview,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+        context.Requests.Add(request);
+        context.SaveChanges();
+        context.RequestAssignments.Add(new RequestAssignment
+        {
+            RequestId = request.Id,
+            AuditorId = 1,
+            IsActive = true,
+            AssignedAt = DateTime.UtcNow
+        });
+        context.SaveChanges();
+        var service = new RequestService(context);
+        Assert.Throws<InvalidOperationException>(()=>
+        service.ApproveRequest(request.Id, auditorId: 2));
     }
 
     private static AppDbContext CreateContext()
