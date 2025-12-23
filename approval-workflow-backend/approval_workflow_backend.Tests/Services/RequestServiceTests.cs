@@ -20,7 +20,7 @@ public class RequestServiceTests
 		context.Requests.Add(request);
 		context.SaveChanges();
 		var service = new RequestService(context);
-        service.SubmitRequest(request.Id, actorId: 1);
+        service.SubmitRequest(request.Id, actorId: 1,actorRole: "Requestor");
         var updated = context.Requests.First();
         Assert.Equal(RequestState.Submitted, updated.CurrentState);
 		Assert.NotNull(updated.SubmittedAt);
@@ -43,9 +43,14 @@ public class RequestServiceTests
         var service = new RequestService(context);
 
         Assert.Throws<InvalidOperationException>(() =>
-            service.ApproveRequest(request.Id, auditorId: 2));
+            service.ApproveRequest(
+				request.Id,
+				auditorId: 2,
+				actorRole: "Auditor"
+			);
+
     }
-	private static AppDbContext CreateContext()
+    private static AppDbContext CreateContext()
 	{
 		var options = new DbContextOptionsBuilder<AppDbContext>()
 			.UseInMemoryDatabase(Guid.NewGuid().ToString())
