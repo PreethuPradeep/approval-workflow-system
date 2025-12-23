@@ -8,13 +8,12 @@ namespace approval_workflow_backend.Services
     public class RequestService
     {
         private readonly AppDbContext _context;
-        private string actorRole;
 
         public RequestService(AppDbContext context)
         {
             _context = context;
         }
-        public void SubmitRequest(int requestId, int actorId, string actorRole)
+        public void SubmitRequest(int requestId, int actorId)
         {//find the request of id given from requests
             var request = _context.Requests
                 .IgnoreQueryFilters()
@@ -25,6 +24,7 @@ namespace approval_workflow_backend.Services
             //if the current satate of the request cannot transition to Submitted, invalid state
             if (!RequestStateGuard.CanTransition(request.CurrentState, Models.RequestState.Submitted))
                 throw new InvalidOperationException("Invalid state transition");
+            var actorRole = ResolveActorRole(actorId);
             //if fromState is the current state of request and toState is what it will be after trnsition
             var fromState = request.CurrentState;
             //change the current state to submitted and record the time.
@@ -43,7 +43,7 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
-        public void AssignRequest(int requestId, int auditorId, int actorId, string actorRole)
+        public void AssignRequest(int requestId, int auditorId, int actorId)
         {//once request is submitted the request need to be assigned to an auditor and state must be transitioned.
             var request = _context.Requests.First(r => r.Id == requestId);
             //check if the currentstate can transition to assignedToAuditor
@@ -63,6 +63,7 @@ namespace approval_workflow_backend.Services
                 AssignedAt = DateTime.UtcNow,
                 IsActive = true
             });
+            var actorRole = ResolveActorRole(actorId);
             //change the state
             var fromState = request.CurrentState;
             request.CurrentState = RequestState.AssignedToAuditor;
@@ -79,7 +80,7 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
-        public void MarkUnderReview(int requestId, int auditorId, string actorRole)
+        public void MarkUnderReview(int requestId, int auditorId)
         {//once the request is opened by auditor its marked under auditor review
             var request = _context.Requests.First(r => r.Id == requestId);
             //check if its state can change from current to under auditor review
@@ -91,6 +92,7 @@ namespace approval_workflow_backend.Services
             var assignment = _context.RequestAssignments
                 .FirstOrDefault(a => a.RequestId == requestId &&
                 a.AuditorId == auditorId && a.IsActive);
+            var actorRole = ResolveActorRole(auditorId);
             //if null no such assignment
             if (assignment == null)
                 throw new InvalidOperationException("No active assignments");
@@ -111,7 +113,7 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //request is approved
-        public void ApproveRequest(int requestId, int auditorId, string actorRole)
+        public void ApproveRequest(int requestId, int auditorId)
         {
             //get the request
             var request = _context.Requests.First(r => r.Id == requestId);
@@ -123,6 +125,9 @@ namespace approval_workflow_backend.Services
             //if assignment null, then exception
             if (assignment == null)
                 throw new InvalidOperationException("No active assignment for this request");
+            //actor role
+            var actorRole = ResolveActorRole(auditorId);
+
             //record state
             var fromState = request.CurrentState;
             //Change state
@@ -143,7 +148,7 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //request is rejected
-        public void RejectRequest(int requestId, int auditorId, string actorRole)
+        public void RejectRequest(int requestId, int auditorId)
         {
             var request = _context.Requests.First(r => r.Id == requestId);
             if (!RequestStateGuard.CanTransition(request.CurrentState, RequestState.Rejected))
@@ -151,6 +156,7 @@ namespace approval_workflow_backend.Services
             var assignment = _context.RequestAssignments.FirstOrDefault(r => r.RequestId == requestId && r.AuditorId == auditorId && r.IsActive == true);
             if (assignment == null)
                 throw new InvalidOperationException("No active assignment for the request");
+            var actorRole = ResolveActorRole(auditorId);
             var fromState = request.CurrentState;
             request.CurrentState = RequestState.Rejected;
             assignment.IsActive = false;
@@ -167,14 +173,14 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //escalated to admin
-        public void EscalateToAdmin(int requestId,int auditorId, string reason, string actorRole)
+        public void EscalateToAdmin(int requestId,int auditorId, string reason)
         {
             var request = _context.Requests.First(r => r.Id == requestId);
             if (!RequestStateGuard.CanTransition(
             request.CurrentState,
             RequestState.PendingAdmin))
                 throw new InvalidOperationException("Invalid state transition");
-
+            var actorRole = ResolveActorRole(auditorId);
             var assignment = _context.RequestAssignments.FirstOrDefault(r => r.RequestId == requestId && r.AuditorId == auditorId && r.IsActive);
             if (assignment == null) throw new InvalidOperationException("No active assignment for this request");
             var fromState = request.CurrentState;
@@ -196,11 +202,12 @@ namespace approval_workflow_backend.Services
             
         }
         //close request
-        public void CloseRequest(int requestId,int actorId, string actorRole)
+        public void CloseRequest(int requestId,int actorId)
         {
             var request = _context.Requests.First(r => r.Id == requestId);
             if (!RequestStateGuard.CanTransition(request.CurrentState, RequestState.Closed))
                 throw new InvalidOperationException("Invalid state transition");
+            var actorRole = ResolveActorRole(actorId);
             var fromState = request.CurrentState;
             request.CurrentState = RequestState.Closed;
             request.ClosedAt = DateTime.UtcNow;
@@ -217,12 +224,13 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //Deactivete request
-        public void DeactivateRequest(int requestId, int actorId,string reason, string role)
+        public void DeactivateRequest(int requestId, int actorId,string reason)
         {
             var request = _context.Requests.IgnoreQueryFilters().First(r => r.Id == requestId);
             if (request.CurrentState != RequestState.Closed) throw new InvalidOperationException("Only closed requests can be deactivated");
             if (!request.IsActive) return;
             request.IsActive = false;
+            var actorRole = ResolveActorRole(actorId);
             _context.RequestAudits.Add(new RequestAudit
             {
                 RequestId = requestId,
@@ -237,11 +245,12 @@ namespace approval_workflow_backend.Services
             _context.SaveChanges();
         }
         //redressalls
-        public void CreateRedressal(int requestId, int actorId, string payload, string actorRole)
+        public void CreateRedressal(int requestId, int actorId, string payload)
         {
             var request = _context.Requests.IgnoreQueryFilters().First(r=> r.Id == requestId);
             if (request.CurrentState != RequestState.Closed) throw new InvalidOperationException("Only closed requests can have redressals");
             request.RedressalCount++;
+            var actorRole = ResolveActorRole(actorId);
             var redressal = new Redressal
             {
                 RequestId = requestId,
@@ -270,7 +279,7 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
-        public void CloseRedressal(int requestId,int actorId,string reason, string actorRole)
+        public void CloseRedressal(int requestId,int actorId,string reason)
         {
             var request = _context.Requests.First(r => r.Id == requestId);
             if (request.CurrentState!=RequestState.Closed)
@@ -279,6 +288,7 @@ namespace approval_workflow_backend.Services
             if (redressal == null) throw new InvalidOperationException("No active reddressal exists for this request");
             redressal.IsActive = false;
             redressal.ClosedAt = DateTime.UtcNow;
+            var actorRole = ResolveActorRole(actorId);
             _context.RequestAudits.Add(new RequestAudit
             {
                 RequestId = requestId,
@@ -292,5 +302,19 @@ namespace approval_workflow_backend.Services
             });
             _context.SaveChanges();
         }
+        private string ResolveActorRole(int userId)
+        {
+            var role = _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Select(ur => ur.Role.Name)
+                .SingleOrDefault();
+
+            if (role == null)
+                throw new InvalidOperationException("User has no role assigned");
+
+            return role;
+        }
+
+
     }
 }

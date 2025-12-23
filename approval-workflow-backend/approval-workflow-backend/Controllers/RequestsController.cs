@@ -2,7 +2,6 @@
 using approval_workflow_backend.Services;
 using approval_workflow_backend.Utility;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -24,8 +23,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult Submit(int id)
         {
             var actorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.SubmitRequest(id, actorId,role);
+            _requestService.SubmitRequest(id, actorId);
             return NoContent();
         }
 
@@ -34,8 +32,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult Assign(int id, [FromBody] AssignRequestDto dto)
         {
             var actorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.AssignRequest(id, dto.AuditorId, actorId,role);
+            _requestService.AssignRequest(id, dto.AuditorId, actorId);
             return NoContent();
         }
 
@@ -44,8 +41,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult Open(int id)
         {
             var auditorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.MarkUnderReview(id, auditorId,role);
+            _requestService.MarkUnderReview(id, auditorId);
             return NoContent();
         }
 
@@ -54,8 +50,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult Approve(int id)
         {
             var auditorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.ApproveRequest(id, auditorId,role);
+            _requestService.ApproveRequest(id, auditorId);
             return NoContent();
         }
 
@@ -64,8 +59,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult Reject(int id)
         {
             var auditorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.RejectRequest(id, auditorId,role);
+            _requestService.RejectRequest(id, auditorId);
             return NoContent();
         }
 
@@ -74,8 +68,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult Escalate(int id, [FromBody] ReasonDto dto)
         {
             var auditorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.EscalateToAdmin(id, auditorId, dto.Reason,role);
+            _requestService.EscalateToAdmin(id, auditorId, dto.Reason);
             return NoContent();
         }
 
@@ -84,8 +77,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult Close(int id)
         {
             var actorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.CloseRequest(id, actorId,role);
+            _requestService.CloseRequest(id, actorId);
             return NoContent();
         }
 
@@ -94,8 +86,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult Deactivate(int id, [FromBody] ReasonDto dto)
         {
             var actorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.DeactivateRequest(id, actorId, dto.Reason,role);
+            _requestService.DeactivateRequest(id, actorId, dto.Reason);
             return NoContent();
         }
 
@@ -104,8 +95,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult CreateRedressal(int id, [FromBody] CreateRedressalDto dto)
         {
             var actorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.CreateRedressal(id, actorId, dto.Payload,role);
+            _requestService.CreateRedressal(id, actorId, dto.Payload);
             return NoContent();
         }
 
@@ -114,8 +104,7 @@ namespace approval_workflow_backend.Controllers
         public IActionResult CloseRedressal(int id, [FromBody] ReasonDto dto)
         {
             var actorId = GetUserId();
-            var role = GetUserRole();
-            _requestService.CloseRedressal(id, actorId, dto.Reason,role);
+            _requestService.CloseRedressal(id, actorId, dto.Reason);
             return NoContent();
         }
 
@@ -127,15 +116,6 @@ namespace approval_workflow_backend.Controllers
 
             return int.Parse(claim.Value);
         }
-        private string GetUserRole()
-        {
-            var roleClaim = User.FindFirst(ClaimTypes.Role);
-            if (roleClaim == null)
-                throw new UnauthorizedAccessException("User role claim missing");
-
-            return roleClaim.Value;
-        }
-
     }
 
 }
