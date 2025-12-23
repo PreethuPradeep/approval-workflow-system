@@ -3,11 +3,11 @@
 A backend-focused approval workflow system built using **ASP.NET Core** and **Entity Framework Core**, designed to model real-world approval processes with strong emphasis on **correctness, auditability, and controlled state transitions**.
 
 This project prioritizes backend integrity and workflow safety over UI complexity.
-> 🚧 Backend-first build. Frontend and deployment will be added after core workflow stabilization.
+>  Backend-first build. Frontend and deployment will be added after core workflow stabilization.
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
 - **Explicit Request State Machine**
   - Guarded state transitions prevent invalid workflow jumps
@@ -37,7 +37,7 @@ This project prioritizes backend integrity and workflow safety over UI complexit
 
 ---
 
-## 🧠 Design Principles
+##  Design Principles
 
 - **State machines over boolean flags**  
   Prevents invalid combinations and implicit transitions
@@ -56,9 +56,9 @@ This project prioritizes backend integrity and workflow safety over UI complexit
 
 ---
 
-## 🏗️ Architecture Overview
+##  Architecture Overview
 
-Controllers (planned)
+Controllers (API layer)
 ↓
 Application Services
 ↓
@@ -73,7 +73,7 @@ SQL Server
 
 ---
 
-## 🧩 Core Domain Concepts
+##  Core Domain Concepts
 
 ### Request
 Represents the primary approval entity.  
@@ -92,33 +92,134 @@ Redressals are versioned and tracked independently of the main request lifecycle
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 - **Backend:** ASP.NET Core Web API
 - **ORM:** Entity Framework Core
 - **Database:** SQL Server
 - **Language:** C#
 - **Version Control:** Git, GitHub
+- **Authentication**: Cookie-based with claims
+- **Authorization**: Role-based via ASP.NET Core policies
 
 ---
 
-## 🚧 Current Status
+##  Current Status
 
 - Core backend workflow implemented
 - Redressal creation and closure supported
 - Full audit logging in place
 
+---
+
+## Testing Strategy
+
+This project uses targeted unit tests covering state guards, assignment ownership, and authorization-sensitive paths to enforce critical workflow invariants:
+
+- Invalid state transitions are rejected
+- Only assigned auditors can act on requests
+- Assignments are closed on terminal actions
+- Audit entries are created for every state change
+
+The focus is on business-critical rules rather than exhaustive CRUD coverage.
+
+---
+
+## API Usage
+
+### Submit Request
+POST /api/requests/{id}/submit
+Role: Requestor
+Precondition: Draft
+
+Response: 204 No Content
+
+### Assign Request
+POST /api/requests/{id}/assign
+Role: Admin
+Precondition: Submitted
+
+### Open Request
+POST /api/requests/{id}/open
+Role: Auditor
+Precondition: Assigned
+
+### Approve Request
+POST /api/requests/{id}/approve
+Role: Auditor
+Precondition: Opened
+
+### Rejected Request
+POST /api/requests/{id}/reject
+Role: Auditor
+Precondition: Opened
+
+### Escalate Request
+POST /api/requests/{id}/escalate
+Role: Auditor
+Precondition: UnderAuditorReview
+
+
+### Close Request
+POST /api/requests/{id}/close
+Role: Admin
+Precondition: Approved/Rejected
+
+### Deactivate Request
+POST /api/requests/{id}/deactivate
+Role: Admin
+Precondition: Closed
+
+
+### Create Reddressal 
+POST /api/requests/{id}/redressals
+Role: Requestor
+Precondition: Closed
+
+### Close Redressal
+POST /api/requests/{id}/redressals/close
+Role: Admin
+Precondition: Redressal created, Request closed
+
+---
+
 ### In Progress / Planned
-- Role-based authorization (Admin / Auditor / Requestor)
-- REST API controllers
-- Unit tests for state guards and services
 - Documentation diagrams (ER + state flow)
+- Expanded negative-path tests
 - Minimal frontend (Angular)
 - Dockerization and cloud deployment
 
 ---
 
-## 📝 Why This Project Exists
+## State machine visualization
+
+Draft → Submitted → Assigned → UnderReview → Approved → Closed (Admin)
+                       ↓
+                   Rejected → Closed (Admin)
+                       ↓
+                   Redressal → Submitted
+
+---
+
+## Authorization Boundaries
+
+| Action                  | Role       |
+|-------------------------|------------|
+| Submit                  | Requestor  |
+| Assign                  | Admin      |
+| Open                    | Auditor    |
+| Approve                 | Auditor    |
+| Reject                  | Auditor    |
+| Escalate                | Auditor    |
+| Close                   | Admin      |
+| Deactivate              | Admin      |
+| Redressal create        | Requestor  |
+| Redressal close         | Admin      |
+
+
+---
+
+##  Why This Project Exists
 
 This project was built to explore **realistic backend workflow design**, focusing on:
 - correctness under complex state transitions
