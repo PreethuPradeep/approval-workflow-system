@@ -4,99 +4,82 @@ This document describes the core domain entities and their relationships.
 
 ---
 
-## User
-- Id
-- FullName
-- Email
-- PasswordHash
+```mermaid
+erDiagram
+    USER ||--o{ USER_ROLE : has
+    ROLE ||--o{ USER_ROLE : defines
 
-Relationships:
-- One User → Many UserRoles
-- One User → Many RequestAudits (Actor)
+    USER ||--o{ REQUEST : submits
+    USER ||--o{ REQUEST_AUDIT : performs
+    USER ||--o{ REQUEST_ASSIGNMENT : assigned_to
 
----
+    REQUEST ||--o{ REQUEST_ASSIGNMENT : has
+    REQUEST ||--o{ REQUEST_AUDIT : logs
+    REQUEST ||--o{ REDRESSAL : may_have
 
-## Role
-- Id
-- Name
+    REDRESSAL ||--o{ REDRESSAL_CONTENT : contains
 
-Relationships:
-- One Role → Many UserRoles
+    USER {
+        int Id
+        string FullName
+        string Email
+        string PasswordHash
+    }
 
----
+    ROLE {
+        int Id
+        string Name
+    }
 
-## UserRole
-- UserId
-- RoleId
+    USER_ROLE {
+        int UserId
+        int RoleId
+    }
 
-Purpose:
-- Maps users to roles (Admin, Auditor, Requestor)
+    REQUEST {
+        int Id
+        int RequesterId
+        string CurrentState
+        bool IsActive
+        datetime CreatedAt
+        datetime SubmittedAt
+        datetime ClosedAt
+        int RedressalCount
+    }
 
----
+    REQUEST_ASSIGNMENT {
+        int Id
+        int RequestId
+        int AuditorId
+        datetime AssignedAt
+        bool IsActive
+    }
 
-## Request
-- Id
-- RequesterId
-- CurrentState
-- IsActive
-- CreatedAt
-- SubmittedAt
-- ClosedAt
-- RedressalCount
+    REQUEST_AUDIT {
+        int Id
+        int RequestId
+        int ActorId
+        string ActorRole
+        string FromState
+        string ToState
+        string Action
+        string Reason
+        datetime CreatedAt
+    }
 
-Relationships:
-- One Request → Many RequestAssignments
-- One Request → Many RequestAudits
-- One Request → Many Redressals
+    REDRESSAL {
+        int Id
+        int RequestId
+        int RedressalCount
+        bool IsActive
+        datetime CreatedAt
+        datetime ClosedAt
+    }
 
----
+    REDRESSAL_CONTENT {
+        int Id
+        int RedressalId
+        string PayLoad
+        datetime CreatedAt
+    }
 
-## RequestAssignment
-- Id
-- RequestId
-- AuditorId
-- AssignedAt
-- IsActive
-
-Rules:
-- Only one active assignment per request
-
----
-
-## RequestAudit
-- Id
-- RequestId
-- ActorId
-- ActorRole
-- FromState
-- ToState
-- Action
-- Reason
-- CreatedAt
-
-Purpose:
-- Immutable audit trail of all state changes
-
----
-
-## Redressal
-- Id
-- RequestId
-- RedressalCount
-- IsActive
-- CreatedAt
-- ClosedAt
-
-Relationships:
-- One Redressal → Many RedressalContents
-
----
-
-## RedressalContent
-- Id
-- RedressalId
-- PayLoad
-- CreatedAt
-
-Purpose:
-- Stores appeal content separately from lifecycle metadata
