@@ -58,7 +58,7 @@ This project prioritizes backend integrity and workflow safety over UI complexit
 
 ##  Architecture Overview
 
-Controllers (planned)
+Controllers (API layer)
 ↓
 Application Services
 ↓
@@ -99,6 +99,8 @@ Redressals are versioned and tracked independently of the main request lifecycle
 - **Database:** SQL Server
 - **Language:** C#
 - **Version Control:** Git, GitHub
+- **Authentication**: Cookie-based with claims
+- **Authorization**: Role-based via ASP.NET Core policies
 
 ---
 
@@ -112,7 +114,7 @@ Redressals are versioned and tracked independently of the main request lifecycle
 
 ## Testing Strategy
 
-This project uses targeted unit tests to enforce critical workflow invariants:
+This project uses targeted unit tests covering state guards, assignment ownership, and authorization-sensitive paths to enforce critical workflow invariants:
 
 - Invalid state transitions are rejected
 - Only assigned auditors can act on requests
@@ -123,13 +125,97 @@ The focus is on business-critical rules rather than exhaustive CRUD coverage.
 
 ---
 
+## API Usage
+
+### Submit Request
+POST /api/requests/{id}/submit
+Role: Requestor
+Precondition: Draft
+
+Response: 204 No Content
+
+### Assign Request
+POST /api/requests/{id}/assign
+Role: Admin
+Precondition: Submitted
+
+### Open Request
+POST /api/requests/{id}/open
+Role: Auditor
+Precondition: Assigned
+
+### Approve Request
+POST /api/requests/{id}/approve
+Role: Auditor
+Precondition: Opened
+
+### Rejected Request
+POST /api/requests/{id}/reject
+Role: Auditor
+Precondition: Opened
+
+### Escalate Request
+POST /api/requests/{id}/escalate
+Role: Auditor
+Precondition: UnderAuditorReview
+
+
+### Close Request
+POST /api/requests/{id}/close
+Role: Admin
+Precondition: Approved/Rejected
+
+### Deactivate Request
+POST /api/requests/{id}/deactivate
+Role: Admin
+Precondition: Closed
+
+
+### Create Reddressal 
+POST /api/requests/{id}/redressals
+Role: Requestor
+Precondition: Closed
+
+### Close Redressal
+POST /api/requests/{id}/redressals/close
+Role: Admin
+Precondition: Redressal created, Request closed
+
+---
+
 ### In Progress / Planned
-- Role-based authorization (Admin / Auditor / Requestor)
-- REST API controllers
-- Unit tests for state guards and services
 - Documentation diagrams (ER + state flow)
+- Expanded negative-path tests
 - Minimal frontend (Angular)
 - Dockerization and cloud deployment
+
+---
+
+## State machine visualization
+
+Draft → Submitted → Assigned → UnderReview → Approved → Closed (Admin)
+                       ↓
+                   Rejected → Closed (Admin)
+                       ↓
+                   Redressal → Submitted
+
+---
+
+## Authorization Boundaries
+
+| Action                  | Role       |
+|-------------------------|------------|
+| Submit                  | Requestor  |
+| Assign                  | Admin      |
+| Open                    | Auditor    |
+| Approve                 | Auditor    |
+| Reject                  | Auditor    |
+| Escalate                | Auditor    |
+| Close                   | Admin      |
+| Deactivate              | Admin      |
+| Redressal create        | Requestor  |
+| Redressal close         | Admin      |
+
 
 ---
 
